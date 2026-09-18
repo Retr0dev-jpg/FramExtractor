@@ -39,11 +39,11 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
-          name: ${{ github.ref_type == 'tag' && github.ref_name || 'Latest' }}
-          prerelease: ${{ github.ref_type != 'tag' }}
-          make_latest: ${{ github.ref_type == 'tag' }}
-          generate_release_notes: ${{ github.ref_type == 'tag' }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'latest' }}
+          name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'Latest' }}
           files: dist/FramExtractor-*-windows-x64.exe
+          generate_release_notes: true
+          make_latest: true
+          prerelease: false
           fail_on_unmatched_files: true
           overwrite_files: true

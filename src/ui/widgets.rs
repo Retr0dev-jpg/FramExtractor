@@ -146,7 +146,7 @@ pub fn draw_drop_zone(ui: &mut egui::Ui, drag_hover: bool) {
         rect.shrink(8.0),
         egui::CornerRadius::same(8),
         fill,
-        egui::Stroke::new(if drag_hover { 2.0 } else { 1.0 }, stroke_color),
+        egui::Stroke::new(if drag_hover { 2.0_f32 } else { 1.0_f32 }, stroke_color),
         egui::StrokeKind::Outside,
     );
 
@@ -190,7 +190,7 @@ pub fn draw_drop_zone_compact(ui: &mut egui::Ui, drag_hover: bool) {
         rect.shrink(2.0),
         egui::CornerRadius::same(6),
         fill,
-        egui::Stroke::new(1.0, stroke_color),
+        egui::Stroke::new(1.0_f32, stroke_color),
         egui::StrokeKind::Outside,
     );
 
