@@ -1,6 +1,7 @@
 #![windows_subsystem = "windows"]
 
 mod ffmpeg_setup;
+mod i18n;
 mod state;
 mod ui;
 mod worker;
@@ -13,6 +14,8 @@ use state::AppState;
 use ui::App;
 
 fn main() -> eframe::Result<()> {
+    i18n::init();
+
     let app_state = AppState::new();
     let startup_done = Arc::new(AtomicBool::new(false));
 

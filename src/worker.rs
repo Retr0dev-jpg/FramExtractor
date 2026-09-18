@@ -13,6 +13,7 @@ use ffmpeg_sidecar::{
 
 use crate::{
     ffmpeg_setup::ffmpeg_exe_path,
+    i18n,
     state::{JobPhase, JobState},
 };
 
@@ -53,7 +54,8 @@ fn extract_frames(
     ctx: &egui::Context,
 ) -> Result<(), String> {
     if !video_path.exists() {
-        return Err(format!("File non trovato: {}", video_path.display()));
+        let path = video_path.display().to_string();
+        return Err(i18n::tf("file_not_found", &[("path", &path)]));
     }
 
     let video_str = video_path.to_string_lossy().to_string();
@@ -62,11 +64,11 @@ fn extract_frames(
         .input(&video_str)
         .rawvideo()
         .spawn()
-        .map_err(|e| format!("Impossibile avviare ffmpeg: {e}"))?;
+        .map_err(|e| i18n::tf("ffmpeg_start", &[("error", &e.to_string())]))?;
 
     let iter = child
         .iter()
-        .map_err(|e| format!("Errore comunicazione ffmpeg: {e}"))?;
+        .map_err(|e| i18n::tf("ffmpeg_comm", &[("error", &e.to_string())]))?;
 
     let mut duration_secs: Option<f64> = None;
     let mut got_video_stream = false;
@@ -103,31 +105,29 @@ fn extract_frames(
                 let file_path = output_dir.join(format!("frame_{:06}.png", idx));
                 save_png(&data, width, height, &file_path).map_err(|e| {
                     let msg = e.to_string();
+                    let idx_s = idx.to_string();
                     if msg.contains("28") || msg.to_lowercase().contains("space") {
-                        format!("Disco pieno durante il salvataggio del frame {idx}")
+                        i18n::tf("disk_full", &[("idx", &idx_s)])
                     } else if msg.to_lowercase().contains("permission")
                         || msg.to_lowercase().contains("access")
                     {
-                        format!("Permesso negato per frame_{idx:06}.png")
+                        let file = format!("frame_{idx:06}.png");
+                        i18n::tf("permission_denied", &[("file", &file)])
                     } else {
-                        format!("Errore salvataggio frame {idx}: {msg}")
+                        i18n::tf("save_frame", &[("idx", &idx_s), ("error", &msg)])
                     }
                 })?;
                 ctx.request_repaint();
             }
             FfmpegEvent::Log(ffmpeg_sidecar::event::LogLevel::Fatal, msg) => {
-                return Err(format!("Errore ffmpeg: {msg}"));
+                return Err(i18n::tf("ffmpeg_error", &[("error", &msg)]));
             }
             FfmpegEvent::Error(msg) => {
-                return Err(format!("Errore interno: {msg}"));
+                return Err(i18n::tf("internal_error", &[("error", &msg)]));
             }
             FfmpegEvent::Done => {
                 if !got_video_stream && job.frames_done.load(std::sync::atomic::Ordering::Relaxed) == 0 {
-                    return Err(
-                        "Nessun frame estratto: il file potrebbe non contenere video, \
-                         essere corrotto o usare un codec non supportato."
-                            .to_string(),
-                    );
+                    return Err(i18n::t("no_frames"));
                 }
             }
             _ => {}
@@ -151,17 +151,20 @@ pub fn resolve_output_dir(video_path: &Path) -> Result<PathBuf, String> {
         .to_path_buf();
 
     if !parent.exists() {
-        return Err(format!(
-            "La cartella del video non esiste: {}",
-            parent.display()
-        ));
+        let path = parent.display().to_string();
+        return Err(i18n::tf("parent_missing", &[("path", &path)]));
     }
 
     let candidate = parent.join(&stem);
     if !candidate.exists() {
         return fs::create_dir_all(&candidate)
             .map(|_| candidate)
-            .map_err(|e| format!("Impossibile creare \"{}\": {}", stem, e));
+            .map_err(|e| {
+                i18n::tf(
+                    "create_dir",
+                    &[("name", stem.as_str()), ("error", &e.to_string())],
+                )
+            });
     }
 
     for n in 1u32..=9999 {
@@ -170,14 +173,16 @@ pub fn resolve_output_dir(video_path: &Path) -> Result<PathBuf, String> {
         if !candidate.exists() {
             return fs::create_dir_all(&candidate)
                 .map(|_| candidate)
-                .map_err(|e| format!("Impossibile creare \"{}\": {}", name, e));
+                .map_err(|e| {
+                    i18n::tf(
+                        "create_dir",
+                        &[("name", name.as_str()), ("error", &e.to_string())],
+                    )
+                });
         }
     }
 
-    Err(format!(
-        "Impossibile trovare un nome disponibile per \"{}\" (troppe copie esistenti)",
-        stem
-    ))
+    Err(i18n::tf("too_many_copies", &[("name", &stem)]))
 }
 
 // ── Salvataggio PNG ───────────────────────────────────────────────────────────

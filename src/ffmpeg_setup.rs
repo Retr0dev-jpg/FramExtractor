@@ -14,7 +14,10 @@ use ffmpeg_sidecar::download::{
     FfmpegDownloadProgressEvent,
 };
 
-use crate::state::{AppPhase, AppState};
+use crate::{
+    i18n,
+    state::{AppPhase, AppState},
+};
 
 // ── Path helpers ──────────────────────────────────────────────────────────────
 
@@ -51,7 +54,7 @@ pub fn startup_download_ffmpeg(
         let dest_dir = ffmpeg_temp_dir();
         if let Err(e) = fs::create_dir_all(&dest_dir) {
             *state.app_phase.lock().unwrap() =
-                AppPhase::StartupError(format!("Impossibile creare la cartella temp: {e}"));
+                AppPhase::StartupError(i18n::tf("temp_dir", &[("error", &e.to_string())]));
             done_flag.store(true, Ordering::Relaxed);
             ctx.request_repaint();
             return;
@@ -61,7 +64,7 @@ pub fn startup_download_ffmpeg(
             Ok(u) => u,
             Err(e) => {
                 *state.app_phase.lock().unwrap() =
-                    AppPhase::StartupError(format!("URL download non disponibile: {e}"));
+                    AppPhase::StartupError(i18n::tf("download_url", &[("error", &e.to_string())]));
                 done_flag.store(true, Ordering::Relaxed);
                 ctx.request_repaint();
                 return;
@@ -88,7 +91,7 @@ pub fn startup_download_ffmpeg(
             Ok(p) => p,
             Err(e) => {
                 *state.app_phase.lock().unwrap() =
-                    AppPhase::StartupError(format!("Errore download: {e}"));
+                    AppPhase::StartupError(i18n::tf("download_error", &[("error", &e.to_string())]));
                 done_flag.store(true, Ordering::Relaxed);
                 ctx.request_repaint();
                 return;
@@ -100,7 +103,7 @@ pub fn startup_download_ffmpeg(
 
         if let Err(e) = unpack_ffmpeg(&archive_path, &dest_dir) {
             *state.app_phase.lock().unwrap() =
-                AppPhase::StartupError(format!("Errore estrazione archivio: {e}"));
+                AppPhase::StartupError(i18n::tf("unpack_error", &[("error", &e.to_string())]));
             done_flag.store(true, Ordering::Relaxed);
             ctx.request_repaint();
             return;
@@ -109,9 +112,7 @@ pub fn startup_download_ffmpeg(
         *state.app_phase.lock().unwrap() = if ffmpeg_installed() {
             AppPhase::Ready
         } else {
-            AppPhase::StartupError(
-                "ffmpeg.exe non trovato dopo l'installazione.".to_string(),
-            )
+            AppPhase::StartupError(i18n::t("ffmpeg_missing"))
         };
 
         done_flag.store(true, Ordering::Relaxed);

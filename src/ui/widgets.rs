@@ -2,7 +2,10 @@ use std::time::{Duration, Instant};
 
 use eframe::egui;
 
-use crate::state::{JobPhase, JobState};
+use crate::{
+    i18n,
+    state::{JobPhase, JobState},
+};
 
 // ── Costanti di animazione ────────────────────────────────────────────────────
 
@@ -87,33 +90,39 @@ fn draw_job_row_contents(
                 ui.add(
                     egui::ProgressBar::new(0.0)
                         .desired_width(ui.available_width() - 8.0)
-                        .text("In coda…"),
+                        .text(i18n::t("queued")),
                 );
             }
             JobPhase::Extracting => {
+                let done_s = done.to_string();
+                let total_s = total.to_string();
                 if total > 0 {
                     let ratio = (done as f32 / total as f32).clamp(0.0, 1.0);
                     ui.add(
                         egui::ProgressBar::new(ratio)
                             .desired_width(ui.available_width() - 8.0)
-                            .text(format!("Frame {done} / {total}")),
+                            .text(i18n::tf(
+                                "frames_progress",
+                                &[("done", &done_s), ("total", &total_s)],
+                            )),
                     );
                 } else {
                     ui.add(
                         egui::ProgressBar::new(t * 0.5 % 1.0)
                             .desired_width(ui.available_width() - 8.0)
-                            .text(format!("Frame estratti: {done}")),
+                            .text(i18n::tf("frames_extracted", &[("done", &done_s)])),
                     );
                 }
             }
             JobPhase::Done(finished_at) => {
                 let elapsed = Instant::now().duration_since(*finished_at).as_secs_f32();
                 let _ = elapsed;
+                let done_s = done.to_string();
                 ui.add(
                     egui::ProgressBar::new(1.0)
                         .desired_width(ui.available_width() - 8.0)
                         .text(
-                            egui::RichText::new(format!("✓ {done} frame salvati"))
+                            egui::RichText::new(i18n::tf("frames_saved", &[("done", &done_s)]))
                                 .color(egui::Color32::from_rgb(80, 200, 100)),
                         ),
                 );
@@ -152,9 +161,9 @@ pub fn draw_drop_zone(ui: &mut egui::Ui, drag_hover: bool) {
 
     let center = rect.center();
     let text = if drag_hover {
-        "📂  Rilascia i file qui"
+        i18n::t("drop_here")
     } else {
-        "📂  Trascina video, clicca ➕ o premi Ctrl+V"
+        i18n::t("drop_hint")
     };
     let galley = ui.painter().layout_no_wrap(
         text.to_string(),
@@ -195,7 +204,7 @@ pub fn draw_drop_zone_compact(ui: &mut egui::Ui, drag_hover: bool) {
     );
 
     let galley = ui.painter().layout_no_wrap(
-        "  ⬆  Trascina altri video, o Ctrl+V".to_string(),
+        i18n::t("drop_more"),
         egui::FontId::proportional(12.0),
         egui::Color32::DARK_GRAY,
     );

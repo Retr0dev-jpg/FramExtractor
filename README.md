@@ -4,6 +4,8 @@ Desktop app that extracts **every frame** from one or more videos and saves them
 
 On first launch it automatically downloads `ffmpeg` into a temp folder (no separate install needed). Later launches reuse that copy.
 
+The UI is Italian if the system language is Italian, otherwise English. Strings live in `lang/it.json` and `lang/en.json`.
+
 ## Usage
 
 1. Start `FramExtractor`.

@@ -13,6 +13,7 @@ use std::{
 use eframe::egui;
 
 use crate::{
+    i18n,
     state::{AppPhase, AppState, JobPhase, JobState},
     worker::run_job,
 };
@@ -41,14 +42,17 @@ impl FilePicker {
         self.rx = rx;
         self.open.store(true, Ordering::Relaxed);
         let flag = Arc::clone(&self.open);
+        let title = i18n::t("pick_title");
+        let filter_video = i18n::t("filter_video");
+        let filter_all = i18n::t("filter_all");
         thread::spawn(move || {
             let paths = rfd::FileDialog::new()
-                .set_title("Seleziona uno o più video")
+                .set_title(&title)
                 .add_filter(
-                    "Video",
+                    &filter_video,
                     &["mp4", "mkv", "avi", "mov", "wmv", "flv", "webm", "m4v", "ts", "3gp"],
                 )
-                .add_filter("Tutti i file", &["*"])
+                .add_filter(&filter_all, &["*"])
                 .pick_files()
                 .unwrap_or_default();
             let _ = tx.send(paths);
@@ -211,7 +215,7 @@ impl App {
                     if matches!(app_phase, AppPhase::StartupDownload) {
                         let downloaded = self.state.dl_downloaded.load(Ordering::Relaxed);
                         let total = self.state.dl_total.load(Ordering::Relaxed);
-                        ui.label("Scarico ffmpeg (solo al primo avvio)…");
+                        ui.label(i18n::t("download_ffmpeg"));
                         ui.add_space(8.0);
                         if total > 0 {
                             let ratio = (downloaded as f32 / total as f32).clamp(0.0, 1.0);
@@ -229,17 +233,17 @@ impl App {
                             ui.add(
                                 egui::ProgressBar::new(t * 0.3 % 1.0)
                                     .desired_width(360.0)
-                                    .text("Connessione…"),
+                                    .text(i18n::t("connecting")),
                             );
                         }
                     } else {
-                        ui.label("Estrazione archivio ffmpeg…");
+                        ui.label(i18n::t("unpack_ffmpeg"));
                         ui.add_space(8.0);
                         let t = ui.input(|i| i.time) as f32;
                         ui.add(
                             egui::ProgressBar::new(t * 0.4 % 1.0)
                                 .desired_width(360.0)
-                                .text("Unpack…"),
+                                .text(i18n::t("unpacking")),
                         );
                     }
                 });
@@ -252,7 +256,7 @@ impl App {
                     ui.add_space(20.0);
                     ui.colored_label(
                         egui::Color32::from_rgb(220, 80, 80),
-                        format!("❌ Errore durante l'avvio:\n{err}"),
+                        i18n::tf("startup_error", &[("error", err)]),
                     );
                 });
             }
@@ -264,16 +268,16 @@ impl App {
                 ui.horizontal(|ui| {
                     ui.heading("FramExtractor");
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.button("  ➕  Aggiungi…  ").clicked() {
+                        if ui.button(i18n::t("add_button")).clicked() {
                             self.pick_and_enqueue(ctx.clone());
                         }
                         ui.add_space(4.0);
 
                         let pin_label = if self.pinned { "📌" } else { "📍" };
                         let pin_btn = ui.button(pin_label).on_hover_text(if self.pinned {
-                            "Sblocca dalla prima piano"
+                            i18n::t("pin_off")
                         } else {
-                            "Blocca in primo piano"
+                            i18n::t("pin_on")
                         });
                         if pin_btn.clicked() {
                             self.pinned = !self.pinned;
