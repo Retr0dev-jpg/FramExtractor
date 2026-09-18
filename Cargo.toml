@@ -1,0 +1,23 @@
+[package]
+name = "frame_extractor"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "FramExtractor"
+path = "src/main.rs"
+
+[dependencies]
+rfd = "0.15"
+ffmpeg-sidecar = "2"
+png = "0.17"
+eframe = { version = "0.31", default-features = false, features = ["default_fonts", "glow"] }
+egui = "0.31"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_UI_WindowsAndMessaging"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true
